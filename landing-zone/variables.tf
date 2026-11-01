@@ -24,3 +24,13 @@ variable "monthly_budget" {
   type        = number
   default     = 20
 }
+
+variable "admin_object_id" {
+  description = "Entra object ID of the human admin for Key Vault (set via TF_VAR_admin_object_id)"
+  type        = string
+}
+
+variable "state_storage_account_name" {
+  description = "Name of the Terraform state storage account (set via TF_VAR_state_storage_account_name)"
+  type        = string
+}

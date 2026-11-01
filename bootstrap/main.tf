@@ -66,11 +66,15 @@ resource "azurerm_resource_group" "tfstate" {
 }
 
 resource "azurerm_storage_account" "tfstate" {
+  #checkov:skip=CKV_AZURE_59:Must stay reachable by GitHub-hosted runners; mitigated by Entra-only auth (shared keys disabled), TLS 1.2, no anonymous access
+  #checkov:skip=CKV2_AZURE_33:Private endpoint unreachable from GitHub-hosted runners; revisit with self-hosted runners in the VNet
+  #checkov:skip=CKV2_AZURE_1:Microsoft-managed encryption keys accepted for lab; CMK adds key-rotation burden without a compliance driver
+  #checkov:skip=CKV_AZURE_33:Queue service is not used by this account
   name                            = "stcereustf${random_string.suffix.result}"
   resource_group_name             = azurerm_resource_group.tfstate.name
   location                        = azurerm_resource_group.tfstate.location
   account_tier                    = "Standard"
-  account_replication_type        = "LRS"
+  account_replication_type        = "GRS" # copy in a second region; survives a regional outage
   min_tls_version                 = "TLS1_2"
   https_traffic_only_enabled      = true
   allow_nested_items_to_be_public = false
@@ -100,6 +104,7 @@ resource "azurerm_role_assignment" "state_blob_me" {
 }
 
 resource "azurerm_storage_container" "tfstate" {
+  #checkov:skip=CKV2_AZURE_21:Blob read/write/delete logging is configured in landing-zone/state-logging.tf (sends to the central workspace)
   name                  = "tfstate"
   storage_account_id    = azurerm_storage_account.tfstate.id
   container_access_type = "private"
