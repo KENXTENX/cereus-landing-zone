@@ -21,10 +21,12 @@ terraform {
     resource_group_name = "rg-cereus-tfstate"
     container_name      = "tfstate"
     key                 = "landing-zone.tfstate"
+    use_azuread_auth    = true # sign in with Entra ID, no account key
   }
 }
 
 provider "azurerm" {
   features {}
-  subscription_id = var.subscription_id
+  subscription_id     = var.subscription_id
+  storage_use_azuread = true
 }

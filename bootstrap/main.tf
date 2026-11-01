@@ -20,11 +20,22 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+
+  # Talk to storage with Entra ID identities, not shared account keys
+  storage_use_azuread = true
 }
+
+data "azurerm_client_config" "current" {}
 
 variable "subscription_id" {
   description = "Azure subscription ID (set via TF_VAR_subscription_id)"
   type        = string
+}
+
+variable "allow_shared_keys" {
+  description = "Shared account keys on the state storage. Off: every access must use an Entra ID identity and is attributable in logs."
+  type        = bool
+  default     = false
 }
 
 variable "location" {
@@ -63,6 +74,7 @@ resource "azurerm_storage_account" "tfstate" {
   min_tls_version                 = "TLS1_2"
   https_traffic_only_enabled      = true
   allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = var.allow_shared_keys
 
   # Keep old versions of the state file so a bad apply can be rolled back
   blob_properties {
@@ -78,6 +90,13 @@ resource "azurerm_storage_account" "tfstate" {
   }
 
   tags = local.tags
+}
+
+# Data-plane access for you via Entra ID: replaces the shared key
+resource "azurerm_role_assignment" "state_blob_me" {
+  scope                = azurerm_storage_account.tfstate.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_storage_container" "tfstate" {
