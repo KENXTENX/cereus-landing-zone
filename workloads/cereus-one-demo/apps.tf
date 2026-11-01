@@ -1,10 +1,6 @@
 locals {
   kv_secrets = "${azurerm_key_vault.demo.vault_uri}secrets"
 
-  # Azure stores the identity path in Key Vault secret references exactly as
-  # it was supplied, and the CLI supplied "resourcegroups" in lower case.
-  # Matching it keeps the plan clean.
-  app_identity_ref = replace(azurerm_user_assigned_identity.app.id, "/resourceGroups/", "/resourcegroups/")
 
   # Only used if the app is ever recreated. Day-to-day image updates are
   # deployments, not infrastructure changes, so Terraform ignores them.
@@ -78,7 +74,7 @@ resource "azurerm_container_app" "demo" {
     content {
       name                = secret.key
       key_vault_secret_id = "${local.kv_secrets}/${secret.value}"
-      identity            = local.app_identity_ref
+      identity            = azurerm_user_assigned_identity.app.id
     }
   }
 
@@ -169,7 +165,7 @@ resource "azurerm_container_app_job" "setup" {
     content {
       name                = secret.key
       key_vault_secret_id = "${local.kv_secrets}/${secret.value}"
-      identity            = local.app_identity_ref
+      identity            = azurerm_user_assigned_identity.app.id
     }
   }
 
