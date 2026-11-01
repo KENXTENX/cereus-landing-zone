@@ -10,7 +10,7 @@
 variable "github_repo" {
   description = "GitHub repo allowed to use these identities (owner/name)"
   type        = string
-  default     = "KENXTENX/cereus-landing-zone"
+  default     = "KENXTENX@197035361/cereus-landing-zone@1441591649"
 }
 
 locals {
