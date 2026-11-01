@@ -19,12 +19,12 @@ env:
   TF_VERSION: "1.17.1"
   CHECKOV_VERSION: "3.4.0"
   ARM_USE_OIDC: "true"
-  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   TF_IN_AUTOMATION: "true"
-  TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  TF_VAR_admin_object_id: ${{ vars.ADMIN_OBJECT_ID }}
-  TF_VAR_state_storage_account_name: ${{ vars.STATE_SA }}
+  TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_admin_object_id: ${{ secrets.ADMIN_OBJECT_ID }}
+  TF_VAR_state_storage_account_name: ${{ secrets.STATE_SA }}
   TF_VAR_allowed_ip: ${{ secrets.ALLOWED_IP }}
   TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
 
@@ -51,7 +51,7 @@ jobs:
     needs: scan
     runs-on: ubuntu-latest
     env:
-      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID_PLAN }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PLAN }}
     defaults:
       run:
         working-directory: landing-zone
@@ -67,7 +67,7 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Init (Entra ID auth to state, no keys)
-        run: terraform init -input=false -backend-config="storage_account_name=${{ vars.STATE_SA }}"
+        run: terraform init -input=false -backend-config="storage_account_name=${{ secrets.STATE_SA }}"
 
       - name: Validate
         run: terraform validate
@@ -91,7 +91,7 @@ jobs:
     needs: scan
     runs-on: ubuntu-latest
     env:
-      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID_APPLY }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_APPLY }}
     defaults:
       run:
         working-directory: landing-zone
@@ -104,7 +104,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Init
-        run: terraform init -input=false -backend-config="storage_account_name=${{ vars.STATE_SA }}"
+        run: terraform init -input=false -backend-config="storage_account_name=${{ secrets.STATE_SA }}"
 
       - name: Plan
         run: terraform plan -input=false -no-color -lock-timeout=5m -out=tfplan

@@ -1,0 +1,7 @@
+// Every request Azure Policy blocked, one row per policy that blocked it.
+// Run in the Log Analytics workspace (log-cereus-core), not a resource group's Logs.
+AzureActivity
+| where OperationNameValue has "policies/deny/action"
+| mv-expand p = parse_json(tostring(Properties_d.policies))
+| project TimeGenerated, Caller, ResourceGroup, Policy = tostring(p.policyAssignmentDisplayName)
+| order by TimeGenerated desc

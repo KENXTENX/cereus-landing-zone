@@ -1,0 +1,6 @@
+// Who read, wrote, or deleted Terraform state, and how they signed in.
+// AuthenticationType should always be OAuth (a named identity), never AccountKey.
+StorageBlobLogs
+| where ObjectKey has "tfstate"
+| project TimeGenerated, OperationName, RequesterUpn, RequesterObjectId, AuthenticationType, CallerIpAddress
+| order by TimeGenerated desc
