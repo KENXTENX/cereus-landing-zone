@@ -49,6 +49,36 @@ resource "azurerm_role_assignment" "gh_plan_state" {
   principal_id         = azurerm_user_assigned_identity.gh_plan.principal_id
 }
 
+# Container Apps keep their secret list behind a separate action that Reader
+# doesn't include, so without this the plan can't read the Cereus One demo's
+# app and jobs (workloads/cereus-one-demo). Only those two actions, only in
+# the demo resource group. The secrets there are Key Vault references, but
+# treat this as read access to app secrets in that group (finding F23).
+locals {
+  demo_scope = "${local.sub_scope}/resourceGroups/rg-cereus-demo"
+}
+
+resource "azurerm_role_definition" "plan_list_app_secrets" {
+  name        = "Cereus plan: list Container App secrets (demo)"
+  scope       = local.demo_scope
+  description = "Lets the read-only pipeline identity plan Container Apps and Jobs in rg-cereus-demo."
+
+  permissions {
+    actions = [
+      "Microsoft.App/containerApps/listSecrets/action",
+      "Microsoft.App/jobs/listSecrets/action",
+    ]
+  }
+
+  assignable_scopes = [local.demo_scope]
+}
+
+resource "azurerm_role_assignment" "gh_plan_demo_secrets" {
+  scope              = local.demo_scope
+  role_definition_id = azurerm_role_definition.plan_list_app_secrets.role_definition_resource_id
+  principal_id       = azurerm_user_assigned_identity.gh_plan.principal_id
+}
+
 # --------------------------- apply --------------------------
 resource "azurerm_user_assigned_identity" "gh_apply" {
   name                = "id-cereus-gh-apply"

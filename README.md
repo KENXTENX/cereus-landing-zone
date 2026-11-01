@@ -90,6 +90,9 @@ Security engineering is mostly judgment. Highlights from [`docs/findings.md`](do
 - **The public-storage policy also denies requests that *omit* the setting** — insecure-by-omission is blocked, not just insecure-by-choice.
 - **GitHub OIDC tokens carry immutable owner/repo IDs** → trust rules match those IDs, so a deleted or renamed repo name can't be reclaimed by someone else to reach Azure.
 - **Identity-dependent code:** the Key Vault admin role was assigned to "whoever runs Terraform," which would have swapped the human admin for the pipeline identity on the first CI run → pinned to an explicit object ID.
+- **My own guardrail blocked my own incident response** (F16): the allowed-locations policy denied the patch for a critical Next.js CVE on a demo that predated it. Contained with an action the policy doesn't evaluate, then a scoped, expiring exemption in code, never by switching the policy off.
+- **A failed plan showed as a green check** (F22): `terraform plan | tee` under the default Actions shell has no `pipefail`. Fixed and proven red-then-green on the same errors.
+- **Brownfield adoption:** the hand-built Cereus One demo was imported into Terraform ([`workloads/cereus-one-demo`](workloads/cereus-one-demo)) with import blocks and `prevent_destroy` on everything stateful, rather than rebuilt.
 
 Full threat model: [`docs/threat-model.md`](docs/threat-model.md)
 
@@ -97,7 +100,7 @@ Full threat model: [`docs/threat-model.md`](docs/threat-model.md)
 
 1. GitHub issues the job a short-lived OIDC token describing exactly which repo and trigger it is.
 2. Azure only trusts that token if it matches a federated credential: `pull_request` for the **plan** identity, `refs/heads/main` for the **apply** identity.
-3. The plan identity is **Reader** plus state access. It can look, never change.
+3. The plan identity is **Reader** plus state access. It can look, never change. The one addition is a custom role with only `listSecrets` on the demo's Container Apps, scoped to that resource group (F23).
 4. The apply identity can deploy, with role-assignment rights limited to one resource group.
 5. Nothing long-lived exists to leak. There is no client secret anywhere.
 
@@ -106,6 +109,7 @@ Full threat model: [`docs/threat-model.md`](docs/threat-model.md)
 ```
 bootstrap/          State storage + pipeline identities (run locally, once)
 landing-zone/       Network, Key Vault, logging, policy, budget (deployed by CI)
+workloads/          Workloads on the foundation, each with its own state (deployed by CI)
 .github/workflows/  Checkov gate -> plan (PRs) -> apply (main)
 queries/            KQL used to prove controls work
 docs/               Findings log and threat model
