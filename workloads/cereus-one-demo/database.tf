@@ -32,17 +32,7 @@ resource "azurerm_postgresql_flexible_server" "demo" {
   }
 }
 
-resource "azurerm_postgresql_flexible_server_database" "cereus_one" {
-  name      = "cereus_one"
-  server_id = azurerm_postgresql_flexible_server.demo.id
-  charset   = "UTF8"
-  collation = "en_US.utf8"
-
-  lifecycle {
-    prevent_destroy = true
-
-    # Both force a new database. A spelling difference from what Azure
-    # reports must never be able to drop the data.
-    ignore_changes = [charset, collation]
-  }
-}
+# The cereus_one database inside the server is deliberately not managed here.
+# Azure can't read a database while its server is stopped, which is most of
+# the time, so every plan would fail. The server is the unit Terraform owns;
+# the database was created once with the Azure CLI.

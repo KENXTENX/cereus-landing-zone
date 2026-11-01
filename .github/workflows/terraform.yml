@@ -54,6 +54,9 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PLAN }}
     defaults:
       run:
+        # bash, not the default, so pipefail is on: "plan | tee" must fail
+        # the step when plan fails (finding F22).
+        shell: bash
         working-directory: landing-zone
     steps:
       - uses: actions/checkout@v4
@@ -126,6 +129,7 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PLAN }}
     defaults:
       run:
+        shell: bash # pipefail, see the landing zone plan job
         working-directory: workloads/cereus-one-demo
     steps:
       - uses: actions/checkout@v4

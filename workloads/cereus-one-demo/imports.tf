@@ -53,11 +53,6 @@ import {
 }
 
 import {
-  to = azurerm_postgresql_flexible_server_database.cereus_one
-  id = "${local.import_rg}/providers/Microsoft.DBforPostgreSQL/flexibleServers/cereus-demo-db-kxc1/databases/cereus_one"
-}
-
-import {
   to = azurerm_key_vault.demo
   id = "${local.import_rg}/providers/Microsoft.KeyVault/vaults/kv-cereus-demo-kx"
 }
