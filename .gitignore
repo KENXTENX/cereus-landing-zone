@@ -1,0 +1,20 @@
+# Terraform working files
+.terraform/
+
+# State files can contain secrets - never commit them
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Variable files often hold subscription IDs and secrets
+*.tfvars
+*.tfvars.json
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Mac
+.DS_Store
