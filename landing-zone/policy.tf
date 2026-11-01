@@ -4,8 +4,12 @@
 # a teammate, or an AI agent).
 # ---------------------------------------------------------------
 locals {
-  sub_scope         = "/subscriptions/${var.subscription_id}"
-  allowed_locations = ["eastus", "eastus2"]
+  sub_scope = "/subscriptions/${var.subscription_id}"
+
+  # Central US is approved because neither East region can host the
+  # workload's database on this subscription (finding F17): East US is
+  # offer-restricted for PostgreSQL and East US 2 has no B1ms capacity.
+  allowed_locations = ["eastus", "eastus2", "centralus"]
 }
 
 data "azurerm_policy_definition" "allowed_locations" {
