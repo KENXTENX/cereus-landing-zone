@@ -54,6 +54,9 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PLAN }}
     defaults:
       run:
+        # bash, not the default, so pipefail is on: "plan | tee" must fail
+        # the step when plan fails (finding F22).
+        shell: bash
         working-directory: landing-zone
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +98,79 @@ jobs:
     defaults:
       run:
         working-directory: landing-zone
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init -input=false -backend-config="storage_account_name=${{ secrets.STATE_SA }}"
+
+      - name: Plan
+        run: terraform plan -input=false -no-color -lock-timeout=5m -out=tfplan
+
+      - name: Apply exactly what was planned
+        run: terraform apply -input=false -no-color tfplan
+
+  # ---------------------------------------------------------------
+  # Workload stack: the Cereus One demo (workloads/cereus-one-demo).
+  # Same identities, same gates, separate state. Kept as its own jobs so
+  # the landing zone's required check names don't change.
+  # ---------------------------------------------------------------
+  plan-demo:
+    name: Plan cereus-one demo (read-only)
+    if: github.event_name == 'pull_request'
+    needs: scan
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_PLAN }}
+    defaults:
+      run:
+        shell: bash # pipefail, see the landing zone plan job
+        working-directory: workloads/cereus-one-demo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Init (Entra ID auth to state, no keys)
+        run: terraform init -input=false -backend-config="storage_account_name=${{ secrets.STATE_SA }}"
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -input=false -no-color -lock-timeout=5m | tee plan.txt
+
+      - name: Add plan to job summary
+        if: always()
+        run: |
+          {
+            echo '### Terraform plan: cereus-one demo'
+            echo '```'
+            tail -n 60 plan.txt 2>/dev/null || echo "plan did not run"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  apply-demo:
+    name: Apply cereus-one demo (main only)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [scan, apply]
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_APPLY }}
+    defaults:
+      run:
+        working-directory: workloads/cereus-one-demo
     steps:
       - uses: actions/checkout@v4
 
