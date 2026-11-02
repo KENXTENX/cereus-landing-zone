@@ -18,3 +18,5 @@ override.tf.json
 
 # Mac
 .DS_Store
+tfplan
+*.tfplan
