@@ -133,3 +133,29 @@ output "gh_apply_client_id" {
 output "tenant_id" {
   value = data.azurerm_client_config.current.tenant_id
 }
+
+# ---------------------------------------------------------------
+# Second repo trusted to use the same pipeline identities:
+# cereus-cloud-soc (Project 3). Same immutable-ID subject format.
+# ---------------------------------------------------------------
+variable "soc_repo" {
+  description = "cereus-cloud-soc repo allowed to use the pipeline identities (owner@id/name@id)"
+  type        = string
+  default     = "KENXTENX@197035361/cereus-cloud-soc@1442381387"
+}
+
+resource "azurerm_federated_identity_credential" "soc_plan_pr" {
+  name                      = "github-soc-pull-request"
+  user_assigned_identity_id = azurerm_user_assigned_identity.gh_plan.id
+  issuer                    = local.gh_issuer
+  audience                  = local.gh_aud
+  subject                   = "repo:${var.soc_repo}:pull_request"
+}
+
+resource "azurerm_federated_identity_credential" "soc_apply_main" {
+  name                      = "github-soc-main-branch"
+  user_assigned_identity_id = azurerm_user_assigned_identity.gh_apply.id
+  issuer                    = local.gh_issuer
+  audience                  = local.gh_aud
+  subject                   = "repo:${var.soc_repo}:ref:refs/heads/main"
+}
