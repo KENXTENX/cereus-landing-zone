@@ -122,7 +122,7 @@ jobs:
   # ---------------------------------------------------------------
   plan-demo:
     name: Plan cereus-one demo (read-only)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.DEMO_ENABLED == 'true'
     needs: scan
     runs-on: ubuntu-latest
     env:
@@ -163,7 +163,7 @@ jobs:
 
   apply-demo:
     name: Apply cereus-one demo (main only)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEMO_ENABLED == 'true'
     needs: [scan, apply]
     runs-on: ubuntu-latest
     env:
